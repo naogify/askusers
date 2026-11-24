@@ -26,7 +26,8 @@ askusers-results/<run-id>/
 askusers render askusers-results/<run-id>/data.json
 ```
 
-サンプル（偽のモック LLM で生成した、中身に意味のないデモ）: [`examples/mock-survey`](examples/mock-survey) / [`examples/mock-compare`](examples/mock-compare)
+サンプル（実 LLM・架空の題材。入力は [`samples-src/`](samples-src)）: [`examples/real-survey`](examples/real-survey) / [`examples/real-compare`](examples/real-compare)。ブラウザで見られる公開版は GitHub Pages（`python3 scripts/build_pages.py` で `_site/` に生成）。
+偽のモック LLM で生成した、中身に意味のないデモ: [`examples/mock-survey`](examples/mock-survey) / [`examples/mock-compare`](examples/mock-compare)
 
 ## インストール
 
