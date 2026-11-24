@@ -67,10 +67,10 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def estimate(n: int, n_targets: int, target_chars: int) -> dict:
+def estimate(n: int, n_targets: int, target_chars: int, ssr: bool = True) -> dict:
     """実行前の規模見積もり（確定料金ではない）。質問数は 7 問・SSR 1 問・定性 3 問を仮定した概算。"""
     llm_req = 2 + math.ceil(n / 10) + n * (1 + n_targets) + 3 * (1 + math.ceil(n / 20)) + 1
-    emb_req = math.ceil((n * n_targets + 15) / 128)
+    emb_req = math.ceil((n * n_targets + 15) / 128) if ssr else 0
     in_tok = n * (1 + n_targets) * (900 + (target_chars // 3 if n_targets else 0)) + 20000
     out_tok = n * (1 + n_targets) * 350 + 6000
     return {"llmRequests": llm_req, "embeddingRequests": emb_req,
@@ -162,7 +162,7 @@ def cmd_run(a: argparse.Namespace) -> int:
         targets.append(t)
 
     llm, embedder, backend_name = make_clients(a)
-    est = estimate(a.count, len(targets), sum(len(t.content) for t in targets))
+    est = estimate(a.count, len(targets), sum(len(t.content) for t in targets), embedder is not None)
     if est["llmRequests"] > a.max_requests:
         raise CliError(EXIT_CONFIG, f"推定リクエスト数 {est['llmRequests']} が上限 --max-requests {a.max_requests} を超えます。"
                                     "--count を減らすか上限を上げてください。")
