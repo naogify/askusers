@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 
-from .models import Finding, SurveyData
+from .models import Finding, Response, SurveyData
+from .names import FICTIONAL_NOTICE, short_profile
 
 PRIORITY = {"high": "高", "medium": "中", "low": "低"}
 
@@ -47,6 +48,17 @@ def _finding_stat(d: SurveyData, f: Finding) -> str:
     return f"{s.userCount}人 / {s.denominator}人（言及率 {_pct(s.rate)}）"
 
 
+def _attribution(d: SurveyData, r: Response) -> str:
+    """引用の出典。氏名があれば「— 氏名さん（属性）［ID・回答ID・設問］」、無ければ従来どおり ID。"""
+    u = next((x for x in d.users if x.id == r.userId), None)
+    q = r.questionId.upper()
+    if u is None or not u.displayName:
+        return f"— {r.userId}（{r.id}、{q}）"
+    prof = short_profile(u, d.personaDesign.attributeSchema)
+    return (f"— {md_escape(u.displayName)}さん" + (f"（{md_escape(prof)}）" if prof else "")
+            + f"［{r.userId}・{r.id}・{q}］")
+
+
 def render_markdown(d: SurveyData) -> str:
     qmap = {q.id: q for q in d.survey.questions}
     rmap = {r.id: r for r in d.responses}
@@ -57,6 +69,8 @@ def render_markdown(d: SurveyData) -> str:
     out.append(f"調査対象者：{md_escape(d.research.audience)}"
                + ("（AIによる推定）" if d.research.audienceInferred else "") + "  ")
     out.append(f"回答者：合成ユーザー{d.research.completedUserCount}人（依頼 {d.research.requestedUserCount}人）  ")
+    if any(u.displayName for u in d.users):
+        out.append(f"{FICTIONAL_NOTICE}  ")
     out.append(f"調査目的：{md_escape(d.research.objective)}"
                + ("（既定値）" if d.research.objectiveInferred else "") + "  ")
     out.append(f"実行ID：{md_escape(d.runId)}")
@@ -109,7 +123,7 @@ def render_markdown(d: SurveyData) -> str:
             out += [f"該当ユーザー数・言及率：{st}", ""]
         for rid in f.evidenceResponseIds:
             r = rmap[rid]
-            out += [_quote(str(r.answer)), f"— {r.userId}（{r.id}、{r.questionId.upper()}）", ""]
+            out += [_quote(str(r.answer)), _attribution(d, r), ""]
         refs = ", ".join(x.upper() for x in f.questionIds)
         if f.themeIds:
             refs += "、" + ", ".join(f.themeIds)
