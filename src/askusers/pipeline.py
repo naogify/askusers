@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,9 +13,8 @@ from .limitations import COMPARE_LIMITATION, LIMITATIONS
 from .llm import LLM, Embedder
 from .models import (
     Analysis,
-    Execution,
     ExecError,
-    PersonaDesign,
+    Execution,
     Research,
     Response,
     Survey,

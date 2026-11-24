@@ -43,7 +43,7 @@ async def _ask(llm: LLM, card: str, qs: list[Question], target: Target | None, p
     """質問群への回答を取得。{qid: (status, answer)}, 試行回数, 失敗理由。"""
     parts = [f"Your profile:\n{card}"]
     if prior:
-        parts.append(f"Earlier you already answered (before seeing anything):\n{prior}")
+        parts.append(f"Earlier you already answered these questions:\n{prior}")
     if target is not None:
         parts.append("You are now shown the following document. Answer based only on what it contains.\n"
                      + P.fence_target(target))

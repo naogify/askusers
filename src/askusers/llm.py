@@ -131,7 +131,7 @@ class LLM:
                 try:
                     jsonschema.validate(res.data, schema)
                 except jsonschema.ValidationError as e:
-                    raise LLMError("invalid_output", f"LLM 出力がスキーマに違反: {e.message[:200]}")
+                    raise LLMError("invalid_output", f"LLM 出力がスキーマに違反: {e.message[:200]}") from e
                 return res.data, attempt
             except LLMError as e:
                 e.attempts = attempt
@@ -262,7 +262,7 @@ def parse_cli_output(out: str, err: str, returncode: int | None) -> RawResult:
         obj = json.loads(out)
     except json.JSONDecodeError:
         kind = classify_failure(out + err)
-        raise LLMError(kind, f"claude CLI の出力を解釈できません (exit={returncode}): {(err or out)[:200]}")
+        raise LLMError(kind, f"claude CLI の出力を解釈できません (exit={returncode}): {(err or out)[:200]}") from None
     if obj.get("is_error") or returncode not in (0, None):
         text = str(obj.get("result") or err or "")
         kind = classify_failure(text, obj.get("api_error_status"))

@@ -141,8 +141,8 @@ class MockRawLLM:
         return {"answers": out}
 
     def _codebook(self, user: str) -> dict:
-        return {"themes": [{"label": l, "description": f"キーワード: {k}。{d}", "valence":
-                            "positive" if "使いやすい" in k else "negative"} for l, k, d in _THEMES]}
+        return {"themes": [{"label": lab, "description": f"キーワード: {k}。{d}", "valence":
+                            "positive" if "使いやすい" in k else "negative"} for lab, k, d in _THEMES]}
 
     def _classify(self, user: str) -> dict:
         book = {}
@@ -170,7 +170,7 @@ class MockRawLLM:
             if me and cur:
                 ev.setdefault(cur, []).append(me.group(1))
         findings = []
-        for cnt, (tid, qid, val, label, _s) in themes[:3]:
+        for _cnt, (tid, qid, _val, label, _s) in themes[:3]:
             findings.append({"title": label, "what": f"{label}に関する言及が見られた（モック生成）。",
                              "why": "モックの理由説明。", "themeIds": [tid], "questionIds": [qid],
                              "evidenceResponseIds": ev.get(tid, [])[:2]})
