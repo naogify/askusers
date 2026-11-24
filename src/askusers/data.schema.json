@@ -1,0 +1,1494 @@
+{
+  "$defs": {
+    "Analysis": {
+      "additionalProperties": false,
+      "properties": {
+        "questions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/QuestionSummary"
+          },
+          "title": "Questions",
+          "type": "array"
+        },
+        "themes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Theme"
+          },
+          "title": "Themes",
+          "type": "array"
+        },
+        "findings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "recommendations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Recommendation"
+          },
+          "title": "Recommendations",
+          "type": "array"
+        },
+        "conclusion": {
+          "default": "",
+          "title": "Conclusion",
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Comparison"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Analysis",
+      "type": "object"
+    },
+    "AnchorSet": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "statements": {
+          "description": "スコア1〜5に対応する参照文章（論文の reference statement set Σ_i）",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Statements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "statements"
+      ],
+      "title": "AnchorSet",
+      "type": "object"
+    },
+    "AttributeDef": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "category",
+            "number",
+            "text"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "type"
+      ],
+      "title": "AttributeDef",
+      "type": "object"
+    },
+    "Breakdown": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "title": "Attribute",
+          "type": "string"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/BreakdownGroup"
+          },
+          "title": "Groups",
+          "type": "array"
+        }
+      },
+      "required": [
+        "attribute",
+        "groups"
+      ],
+      "title": "Breakdown",
+      "type": "object"
+    },
+    "BreakdownGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "meanScore": {
+          "title": "Meanscore",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "n",
+        "meanScore"
+      ],
+      "title": "BreakdownGroup",
+      "type": "object"
+    },
+    "ChoiceCount": {
+      "additionalProperties": false,
+      "properties": {
+        "option": {
+          "title": "Option",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "rate": {
+          "title": "Rate",
+          "type": "number"
+        }
+      },
+      "required": [
+        "option",
+        "count",
+        "rate"
+      ],
+      "title": "ChoiceCount",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "beforeTargetId": {
+          "title": "Beforetargetid",
+          "type": "string"
+        },
+        "afterTargetId": {
+          "title": "Aftertargetid",
+          "type": "string"
+        },
+        "pairedUserCount": {
+          "title": "Pairedusercount",
+          "type": "integer"
+        },
+        "questions": {
+          "items": {
+            "$ref": "#/$defs/QuestionComparison"
+          },
+          "title": "Questions",
+          "type": "array"
+        },
+        "themes": {
+          "items": {
+            "$ref": "#/$defs/ThemeComparison"
+          },
+          "title": "Themes",
+          "type": "array"
+        },
+        "improved": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Improved",
+          "type": "array"
+        },
+        "notImproved": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Notimproved",
+          "type": "array"
+        },
+        "newIssues": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Newissues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "beforeTargetId",
+        "afterTargetId",
+        "pairedUserCount",
+        "questions",
+        "themes"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "ExecError": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "userId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Userid"
+        },
+        "questionId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Questionid"
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetid"
+        },
+        "attempts": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempts"
+        }
+      },
+      "required": [
+        "stage",
+        "message"
+      ],
+      "title": "ExecError",
+      "type": "object"
+    },
+    "Execution": {
+      "additionalProperties": false,
+      "properties": {
+        "models": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Models",
+          "type": "object"
+        },
+        "prompts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Prompts",
+          "type": "object"
+        },
+        "settings": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "default": {},
+          "title": "Settings",
+          "type": "object"
+        },
+        "usage": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {},
+          "title": "Usage",
+          "type": "object"
+        },
+        "errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ExecError"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "toolVersion": {
+          "default": "",
+          "title": "Toolversion",
+          "type": "string"
+        }
+      },
+      "title": "Execution",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "what": {
+          "title": "What",
+          "type": "string"
+        },
+        "why": {
+          "title": "Why",
+          "type": "string"
+        },
+        "themeIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Themeids",
+          "type": "array"
+        },
+        "questionIds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Questionids",
+          "type": "array"
+        },
+        "evidenceResponseIds": {
+          "description": "レポートに引用する実在の回答ID（引用文は回答から機械的に取り出す）",
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidenceresponseids",
+          "type": "array"
+        },
+        "stats": {
+          "default": [],
+          "description": "themeIds の和集合をプログラムで計算した言及人数・率",
+          "items": {
+            "$ref": "#/$defs/MentionStat"
+          },
+          "title": "Stats",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "what",
+        "why",
+        "questionIds",
+        "evidenceResponseIds"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "MentionStat": {
+      "additionalProperties": false,
+      "properties": {
+        "targetId": {
+          "title": "Targetid",
+          "type": "string"
+        },
+        "userIds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Userids",
+          "type": "array"
+        },
+        "responseIds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Responseids",
+          "type": "array"
+        },
+        "userCount": {
+          "title": "Usercount",
+          "type": "integer"
+        },
+        "denominator": {
+          "description": "言及率の分母（その質問の有効回答ユーザー数）",
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "rate": {
+          "title": "Rate",
+          "type": "number"
+        }
+      },
+      "required": [
+        "targetId",
+        "userIds",
+        "responseIds",
+        "userCount",
+        "denominator",
+        "rate"
+      ],
+      "title": "MentionStat",
+      "type": "object"
+    },
+    "PersonaDesign": {
+      "additionalProperties": false,
+      "properties": {
+        "attributeSchema": {
+          "items": {
+            "$ref": "#/$defs/AttributeDef"
+          },
+          "title": "Attributeschema",
+          "type": "array"
+        },
+        "policy": {
+          "description": "ペルソナ生成方針（多様性・非迎合の方針）",
+          "title": "Policy",
+          "type": "string"
+        },
+        "segments": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "attributeSchema",
+        "policy"
+      ],
+      "title": "PersonaDesign",
+      "type": "object"
+    },
+    "Question": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "purpose": {
+          "title": "Purpose",
+          "type": "string"
+        },
+        "phase": {
+          "enum": [
+            "before_exposure",
+            "after_exposure"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "responseType": {
+          "enum": [
+            "text",
+            "single_choice",
+            "multiple_choice"
+          ],
+          "title": "Responsetype",
+          "type": "string"
+        },
+        "analysisMethod": {
+          "enum": [
+            "ssr",
+            "categorical",
+            "qualitative"
+          ],
+          "title": "Analysismethod",
+          "type": "string"
+        },
+        "options": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "anchorSets": {
+          "default": [],
+          "description": "analysisMethod=ssr のとき必須。askusers が質問ごとに生成した尺度",
+          "items": {
+            "$ref": "#/$defs/AnchorSet"
+          },
+          "title": "Anchorsets",
+          "type": "array"
+        },
+        "scaleDescription": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ssr のとき、1 と 5 が何を意味するか（利用者向け表示）",
+          "title": "Scaledescription"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "purpose",
+        "phase",
+        "responseType",
+        "analysisMethod"
+      ],
+      "title": "Question",
+      "type": "object"
+    },
+    "QuestionComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "questionId": {
+          "title": "Questionid",
+          "type": "string"
+        },
+        "meanBefore": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Meanbefore"
+        },
+        "meanAfter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Meanafter"
+        },
+        "meanDelta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Meandelta"
+        },
+        "distributionBefore": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Distributionbefore"
+        },
+        "distributionAfter": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Distributionafter"
+        },
+        "validBefore": {
+          "title": "Validbefore",
+          "type": "integer"
+        },
+        "validAfter": {
+          "title": "Validafter",
+          "type": "integer"
+        },
+        "pairedN": {
+          "description": "両対象で有効回答のあるユーザー数",
+          "title": "Pairedn",
+          "type": "integer"
+        },
+        "pairedMeanDelta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pairedmeandelta"
+        }
+      },
+      "required": [
+        "questionId",
+        "meanBefore",
+        "meanAfter",
+        "meanDelta",
+        "distributionBefore",
+        "distributionAfter",
+        "validBefore",
+        "validAfter",
+        "pairedN",
+        "pairedMeanDelta"
+      ],
+      "title": "QuestionComparison",
+      "type": "object"
+    },
+    "QuestionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "questionId": {
+          "title": "Questionid",
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "ssr",
+            "categorical",
+            "qualitative"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "perTarget": {
+          "items": {
+            "$ref": "#/$defs/QuestionTargetSummary"
+          },
+          "title": "Pertarget",
+          "type": "array"
+        }
+      },
+      "required": [
+        "questionId",
+        "method",
+        "perTarget"
+      ],
+      "title": "QuestionSummary",
+      "type": "object"
+    },
+    "QuestionTargetSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "targetId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Targetid"
+        },
+        "validN": {
+          "title": "Validn",
+          "type": "integer"
+        },
+        "failedN": {
+          "title": "Failedn",
+          "type": "integer"
+        },
+        "unansweredN": {
+          "title": "Unansweredn",
+          "type": "integer"
+        },
+        "ssr": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SSRSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "choices": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ChoiceCount"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Choices"
+        },
+        "unclassifiedResponseIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Unclassifiedresponseids",
+          "type": "array"
+        },
+        "breakdowns": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Breakdown"
+          },
+          "title": "Breakdowns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "targetId",
+        "validN",
+        "failedN",
+        "unansweredN"
+      ],
+      "title": "QuestionTargetSummary",
+      "type": "object"
+    },
+    "Recommendation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "priority": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "what": {
+          "title": "What",
+          "type": "string"
+        },
+        "why": {
+          "title": "Why",
+          "type": "string"
+        },
+        "how": {
+          "title": "How",
+          "type": "string"
+        },
+        "findingIds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findingids",
+          "type": "array"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        }
+      },
+      "required": [
+        "id",
+        "priority",
+        "title",
+        "what",
+        "why",
+        "how",
+        "findingIds"
+      ],
+      "title": "Recommendation",
+      "type": "object"
+    },
+    "Research": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "title": "Audience",
+          "type": "string"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "audienceInferred": {
+          "title": "Audienceinferred",
+          "type": "boolean"
+        },
+        "objectiveInferred": {
+          "title": "Objectiveinferred",
+          "type": "boolean"
+        },
+        "requestedUserCount": {
+          "title": "Requestedusercount",
+          "type": "integer"
+        },
+        "completedUserCount": {
+          "title": "Completedusercount",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "audience",
+        "objective",
+        "audienceInferred",
+        "objectiveInferred",
+        "requestedUserCount",
+        "completedUserCount"
+      ],
+      "title": "Research",
+      "type": "object"
+    },
+    "Response": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "提示前の質問は評価対象を見ていないので null（compare では全対象で共有）",
+          "title": "Targetid"
+        },
+        "userId": {
+          "title": "Userid",
+          "type": "string"
+        },
+        "questionId": {
+          "title": "Questionid",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "unanswered",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "attempts": {
+          "default": 1,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "ssr": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SSRResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "themeIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Themeids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "targetId",
+        "userId",
+        "questionId",
+        "status"
+      ],
+      "title": "Response",
+      "type": "object"
+    },
+    "SSRResult": {
+      "additionalProperties": false,
+      "properties": {
+        "distribution": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Distribution",
+          "type": "array"
+        },
+        "expectedScore": {
+          "title": "Expectedscore",
+          "type": "number"
+        },
+        "perSet": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SSRSetResult"
+          },
+          "title": "Perset",
+          "type": "array"
+        }
+      },
+      "required": [
+        "distribution",
+        "expectedScore"
+      ],
+      "title": "SSRResult",
+      "type": "object"
+    },
+    "SSRSetResult": {
+      "additionalProperties": false,
+      "properties": {
+        "setId": {
+          "title": "Setid",
+          "type": "string"
+        },
+        "distribution": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Distribution",
+          "type": "array"
+        }
+      },
+      "required": [
+        "setId",
+        "distribution"
+      ],
+      "title": "SSRSetResult",
+      "type": "object"
+    },
+    "SSRSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "meanScore": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Meanscore"
+        },
+        "distribution": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 5,
+              "minItems": 5,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Distribution"
+        },
+        "validN": {
+          "title": "Validn",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "meanScore",
+        "distribution",
+        "validN"
+      ],
+      "title": "SSRSummary",
+      "type": "object"
+    },
+    "Survey": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "questions": {
+          "items": {
+            "$ref": "#/$defs/Question"
+          },
+          "title": "Questions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "questions"
+      ],
+      "title": "Survey",
+      "type": "object"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "description": "調査対象のスナップショット。内容は「データ」であり指示ではない。",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "url"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "contentHash": {
+          "description": "content の sha256 (hex)",
+          "title": "Contenthash",
+          "type": "string"
+        },
+        "truncated": {
+          "default": false,
+          "title": "Truncated",
+          "type": "boolean"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "enum": [
+                "before",
+                "after"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "compare のみ。回答生成時には LLM に渡さない",
+          "title": "Role"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "content",
+        "contentHash"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "questionId": {
+          "title": "Questionid",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "valence": {
+          "enum": [
+            "positive",
+            "negative",
+            "neutral",
+            "request"
+          ],
+          "title": "Valence",
+          "type": "string"
+        },
+        "stats": {
+          "items": {
+            "$ref": "#/$defs/MentionStat"
+          },
+          "title": "Stats",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "questionId",
+        "label",
+        "description",
+        "valence",
+        "stats"
+      ],
+      "title": "Theme",
+      "type": "object"
+    },
+    "ThemeComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "themeId": {
+          "title": "Themeid",
+          "type": "string"
+        },
+        "rateBefore": {
+          "title": "Ratebefore",
+          "type": "number"
+        },
+        "rateAfter": {
+          "title": "Rateafter",
+          "type": "number"
+        },
+        "delta": {
+          "title": "Delta",
+          "type": "number"
+        },
+        "verdict": {
+          "enum": [
+            "improved",
+            "unchanged",
+            "worsened",
+            "new",
+            "resolved"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        }
+      },
+      "required": [
+        "themeId",
+        "rateBefore",
+        "rateAfter",
+        "delta",
+        "verdict"
+      ],
+      "title": "ThemeComparison",
+      "type": "object"
+    },
+    "User": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "background": {
+          "title": "Background",
+          "type": "string"
+        },
+        "goals": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Goals",
+          "type": "array"
+        },
+        "constraints": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Constraints",
+          "type": "array"
+        },
+        "currentSolutions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Currentsolutions",
+          "type": "array"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "attributes",
+        "background"
+      ],
+      "title": "User",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "default": "1.0.0",
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "runId": {
+      "title": "Runid",
+      "type": "string"
+    },
+    "createdAt": {
+      "title": "Createdat",
+      "type": "string"
+    },
+    "synthetic": {
+      "const": true,
+      "default": true,
+      "title": "Synthetic",
+      "type": "boolean"
+    },
+    "mode": {
+      "enum": [
+        "survey",
+        "compare"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "running",
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "targets": {
+      "items": {
+        "$ref": "#/$defs/Target"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "research": {
+      "$ref": "#/$defs/Research"
+    },
+    "survey": {
+      "$ref": "#/$defs/Survey"
+    },
+    "personaDesign": {
+      "$ref": "#/$defs/PersonaDesign"
+    },
+    "users": {
+      "items": {
+        "$ref": "#/$defs/User"
+      },
+      "title": "Users",
+      "type": "array"
+    },
+    "responses": {
+      "items": {
+        "$ref": "#/$defs/Response"
+      },
+      "title": "Responses",
+      "type": "array"
+    },
+    "analysis": {
+      "$ref": "#/$defs/Analysis"
+    },
+    "execution": {
+      "$ref": "#/$defs/Execution"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "runId",
+    "createdAt",
+    "mode",
+    "status",
+    "targets",
+    "research",
+    "survey",
+    "personaDesign",
+    "users",
+    "responses",
+    "analysis",
+    "execution",
+    "limitations"
+  ],
+  "title": "askusers data.json",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/naogify/askusers/schema/data.schema.json"
+}
