@@ -157,7 +157,8 @@ async def run(cfg: RunConfig, llm: LLM, embedder: Embedder | None, progress: Pro
     for q in survey.questions:
         if q.analysisMethod == "qualitative":
             rs = [r for r in data.responses if r.questionId == q.id]
-            themes = await qualitative.analyze_question(llm, q, rs, tids, theme_no, errors)
+            qt = [None] if q.phase == "before_exposure" else tids
+            themes = await qualitative.analyze_question(llm, q, rs, qt, theme_no, errors)
             theme_no += len(themes)
             data.analysis.themes += themes
     data.analysis.questions = [aggregate.summarize_question(data, q) for q in survey.questions]

@@ -8,3 +8,4 @@ dist/
 askusers-results/
 .env
 .env.*
+.playwright-mcp/

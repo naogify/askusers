@@ -463,8 +463,16 @@
       "additionalProperties": false,
       "properties": {
         "targetId": {
-          "title": "Targetid",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "提示前の質問は評価対象を見ていないので null",
+          "title": "Targetid"
         },
         "userIds": {
           "items": {

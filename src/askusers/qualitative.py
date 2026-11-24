@@ -23,13 +23,13 @@ def mention_stats(target_ids: list[str | None], q_responses: list[Response],
         hit = [r for r in valid if r.id in theme_resp_ids]
         users = sorted({r.userId for r in hit})
         out.append(MentionStat(
-            targetId=tid or "", userIds=users, responseIds=sorted(r.id for r in hit),
+            targetId=tid, userIds=users, responseIds=sorted(r.id for r in hit),
             userCount=len(users), denominator=denom, rate=(len(users) / denom if denom else 0.0)))
     return out
 
 
 async def analyze_question(
-    llm: LLM, q: Question, responses: list[Response], target_ids: list[str],
+    llm: LLM, q: Question, responses: list[Response], target_ids: list[str | None],
     next_theme_no: int, errors: list[ExecError], seed: int = 0,
 ) -> list[Theme]:
     """質問 q の共通コードブックを作り、全回答（全対象）を分類して Theme を返す。

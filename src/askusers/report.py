@@ -86,7 +86,8 @@ async def generate_report(llm: LLM, d: SurveyData, errors: list[ExecError], warn
         if themes:
             qr = [r for r in d.responses if r.questionId in {t.questionId for t in d.analysis.themes
                                                               if t.id in themes}]
-            stats = mention_stats([t.id for t in d.targets], qr, hit)
+            first = next(t for t in d.analysis.themes if t.id == themes[0])
+            stats = mention_stats([s.targetId for s in first.stats], qr, hit)
         fid = f"finding-{len(findings) + 1:03d}"
         index_map[i] = fid
         findings.append(Finding(id=fid, title=f["title"], what=f["what"], why=f["why"],

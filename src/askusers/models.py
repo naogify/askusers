@@ -122,7 +122,7 @@ class Response(_Base):
 
 
 class MentionStat(_Base):
-    targetId: str
+    targetId: str | None = Field(description="提示前の質問は評価対象を見ていないので null")
     userIds: list[str]
     responseIds: list[str]
     userCount: int

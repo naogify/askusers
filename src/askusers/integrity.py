@@ -51,7 +51,7 @@ def check_integrity(d: SurveyData) -> list[str]:
         if t.questionId not in qset:
             problems.append(f"{t.id}: 未知の questionId")
         for s in t.stats:
-            if s.targetId not in tset:
+            if s.targetId is not None and s.targetId not in tset:
                 problems.append(f"{t.id}: 未知の targetId {s.targetId}")
             if not set(s.userIds) <= uset:
                 problems.append(f"{t.id}: 未知の userId")
