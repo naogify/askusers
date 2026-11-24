@@ -48,6 +48,14 @@ def build_parser() -> argparse.ArgumentParser:
               "       askusers render <data.json> [--output DIR]",
     )
     p.add_argument("args", nargs="*", help="調査対象（ファイル/URL）。compare / render はサブコマンド")
+    p.add_argument("--allow-local", action="store_true",
+                   help="localhost（loopback）の URL を読むことを明示的に許可する。private LAN 等は許可されない")
+    p.add_argument("--render", action="store_true",
+                   help="JavaScript を実行して描画後の画面を読む（要 Playwright: uv sync --extra render）")
+    p.add_argument("--route", action="append", default=[], metavar="ROUTE",
+                   help="--render で開く画面（#hash または相対パス）。繰り返し指定可")
+    p.add_argument("--routes", action="append", default=[], metavar="A,B,...",
+                   help='--render で開く画面をカンマ区切りで指定（例: "#land,#spec"）')
     p.add_argument("--who", help="調査対象者を自然言語で指定（既定: AIが推定）")
     p.add_argument("--ask", help="調査目的を自然言語で指定（既定: 総合的な評価と改善点）")
     p.add_argument("--count", type=int, default=100, help="合成ユーザーの人数（既定 100）")
@@ -151,10 +159,15 @@ def cmd_run(a: argparse.Namespace) -> int:
         raise CliError(EXIT_USAGE, "使い方: askusers <target> [--who ...] [--ask ...]（--help 参照）")
     if a.count < 1:
         raise CliError(EXIT_USAGE, "--count は 1 以上にしてください")
+    from .render import split_routes
+    routes = split_routes(a.route + a.routes)
+    if routes and not a.render:
+        raise CliError(EXIT_USAGE, "--route / --routes は --render と一緒に指定してください")
     targets = []
     for i, s in enumerate(srcs, 1):
         try:
-            t = target.load_target(s, f"target-{i:03d}")
+            t = target.load_target(s, f"target-{i:03d}", render=a.render, routes=routes,
+                                   allow_local=a.allow_local)
         except target.TargetError as e:
             raise CliError(EXIT_TARGET, f"評価対象を取得できません: {e}") from e
         if compare:

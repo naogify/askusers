@@ -62,6 +62,7 @@ askusers idea.md                       # 最小限（対象者・目的は AI �
 askusers idea.md --count 30            # 回答者数（既定 100）
 askusers idea.md --open                # 完了後に survey.html をブラウザで開く
 askusers idea.md --format json         # 標準出力は JSON のみ（進捗は標準エラー）。AI エージェント向け
+askusers http://127.0.0.1:8852/ --allow-local --render --routes "#land,#spec"   # ローカルの JS アプリ（要 render extra）
 askusers compare before.md after.md --who "プログラミング初心者" --ask "説明は分かりやすいか？"
 ```
 
@@ -79,7 +80,23 @@ askusers compare before.md after.md --who "プログラミング初心者" --ask
 | `--concurrency` | LLM 同時実行数 | claude CLI 4 / API 8 |
 | `--max-requests` | LLM リクエスト数の上限（再試行含む） | 3000 |
 | `--no-ssr` | Embedding キー無しで SSR を使わず続行 | false |
+| `--allow-local` | localhost（loopback）の URL を読むことを明示的に許可。private LAN 等は許可されない | false |
+| `--render` | JavaScript を実行して描画後の画面を読む（Playwright / Chromium が必要） | false |
+| `--route` / `--routes` | `--render` で開く画面（`#hash` か相対パス）。`--route` は繰り返し可、`--routes "#a,#b"` はカンマ区切り。省略時はトップのみ | — |
 | `--mock` | オフラインのデモ（偽の LLM。結果に意味は無い） | false |
+
+### ローカルの動くサービスや JS で描くページを調べる
+
+既定の URL 取得は HTML を静的に読むだけで、JavaScript は実行しません（SPA は中身が空になります）。`--render` を付けると Chromium で描画してから読みます。
+
+```bash
+uv sync --extra render && uv run playwright install chromium     # 初回のみ
+askusers http://127.0.0.1:8852/ --allow-local --render --routes "#land,#import,#spec"
+```
+
+- 各画面の「表示されているテキスト」と「操作できる要素（ボタン・リンク・選択肢・入力欄のラベル）」を、画面ごとの見出し付きで 1 つの調査対象にして `data.json` に保存します（スナップショット。スキーマ変更なし）。
+- canvas / 3D の描画は画像なのでテキスト化されません（その旨を対象に注記します）。スクリーンショットは撮らず、画像入力もしません。
+- 画面は 1 つずつ新しいタブで開きます（画面間でページ内の状態は引き継がれません）。
 
 実行前に、推定リクエスト数とトークン量（確定料金ではありません）を標準エラーに表示します。
 
@@ -128,14 +145,16 @@ SSR の計算は公式実装の `compute.py` から生成した固定値と 1e-1
 - SSR の参照文章セットは質問ごとに LLM が生成した尺度で、論文で検証された尺度ではありません。
 - モデル・プロンプトで結果が変わります。合成ユーザーの評価への過剰な最適化は避けてください。
 - MVP の範囲外: PDF / HTML ファイル / ディレクトリ / 画像の入力、複数質問を横断するテーマ分析、ユーザー単位の中断再開、実データによるキャリブレーション。
-- URL 取得は http/https のみで、内部ネットワーク宛て（private/loopback/link-local）を拒否します。DNS リバインディングへの完全な対策はしていません。
+- URL 取得は http/https のみで、既定では内部ネットワーク宛て（private/loopback/link-local）を拒否します。DNS リバインディングへの完全な対策はしていません。
+- `--allow-local` で許可されるのは **loopback（127.0.0.0/8・::1・localhost）だけ**です。private LAN・link-local（クラウドのメタデータ等）は指定しても拒否します。リダイレクト先も同じ判定です。**ローカルのサービスの内容は外部の LLM に送信されます**。機密を含むものには使わないでください。
+- `--render` ではブラウザが出すサブリソース要求にも同じ判定をかけ、内部アドレス宛てを遮断します（遮断件数は対象の先頭に注記）。ただし Chromium 自体の DNS 解決とは別に判定するため、DNS リバインディングへの完全な対策ではありません。取得対象のページの JavaScript を実行するため、信頼できない URL には使わないでください。
 - 実 API（Anthropic API・OpenAI Embedding）での動作は、キーがある環境で確認してください（自動テストはすべてモックです）。
 
 ## 開発
 
 ```bash
 uv sync --extra dev
-uv run pytest          # LLM / Embedding はすべてモック（API キー不要）
+uv run pytest          # LLM / Embedding はすべてモック（API キー不要）。実ブラウザのテスト(-m browser)は Chromium が無ければ skip
 uv run ruff check .
 uv run askusers examples/... --mock --count 5   # オフラインのデモ実行
 ```

@@ -104,7 +104,12 @@ def _is_public_ip(ip: str) -> bool:
     return a.is_global and not (a.is_multicast or a.is_loopback or a.is_link_local)
 
 
-def check_url_safe(url: str, resolve=socket.getaddrinfo) -> None:
+def _is_allowed_local(ip: str) -> bool:
+    """--allow-local で許す範囲。loopback のみ（private LAN・link-local は許さない）。"""
+    return ipaddress.ip_address(ip).is_loopback
+
+
+def check_url_safe(url: str, resolve=socket.getaddrinfo, allow_local: bool = False) -> None:
     u = urlparse(url)
     if u.scheme not in ("http", "https"):
         raise TargetError(f"http/https 以外のスキームは取得しません: {u.scheme or '(なし)'}")
@@ -116,19 +121,23 @@ def check_url_safe(url: str, resolve=socket.getaddrinfo) -> None:
     except socket.gaierror as e:
         raise TargetError(f"ホスト名を解決できません: {u.hostname}") from e
     for info in infos:
-        if not _is_public_ip(info[4][0]):
-            raise TargetError(f"内部ネットワーク/予約アドレスへのアクセスは拒否します: {u.hostname}")
+        ip = info[4][0]
+        if _is_public_ip(ip) or (allow_local and _is_allowed_local(ip)):
+            continue
+        hint = "（--allow-local で許可できるのは loopback のみ）" if allow_local else \
+            "（ローカルのサービスは --allow-local で明示的に許可できます）"
+        raise TargetError(f"内部ネットワーク/予約アドレスへのアクセスは拒否します: {u.hostname}{hint}")
 
 
 def load_url(url: str, tid: str = "target-001", client: httpx.Client | None = None,
-             resolve=socket.getaddrinfo) -> Target:
+             resolve=socket.getaddrinfo, allow_local: bool = False) -> Target:
     own = client is None
     client = client or httpx.Client(timeout=20, follow_redirects=False,
                                     headers={"User-Agent": "askusers/0.1 (+synthetic-user research)"})
     try:
         current = url
         for _ in range(MAX_REDIRECTS + 1):
-            check_url_safe(current, resolve)
+            check_url_safe(current, resolve, allow_local)
             try:
                 with client.stream("GET", current) as r:
                     if r.is_redirect:
@@ -161,7 +170,16 @@ def load_url(url: str, tid: str = "target-001", client: httpx.Client | None = No
             client.close()
 
 
-def load_target(source: str, tid: str = "target-001", **kw) -> Target:
-    if source.startswith(("http://", "https://")) or "://" in source:
-        return load_url(source, tid, **kw)
+def load_target(source: str, tid: str = "target-001", *, render: bool = False,
+                routes: list[str] | None = None, allow_local: bool = False, **kw) -> Target:
+    is_url = source.startswith(("http://", "https://")) or "://" in source
+    if render:
+        if not is_url:
+            raise TargetError(f"--render は URL にだけ使えます: {source}")
+        from . import render as _render
+        return _render.render_url(source, tid, routes or [], allow_local=allow_local, **kw)
+    if routes:
+        raise TargetError("--route / --routes は --render と一緒に指定してください")
+    if is_url:
+        return load_url(source, tid, allow_local=allow_local, **kw)
     return load_file(source, tid)

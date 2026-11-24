@@ -80,3 +80,53 @@ def test_too_many_redirects_and_bad_content_type():
         T.load_url("https://example.com/", client=client(lambda r: httpx.Response(302, headers={"location": "/a"})), resolve=PUBLIC)
     with pytest.raises(T.TargetError, match="Content-Type"):
         T.load_url("https://example.com/", client=client(lambda r: httpx.Response(200, content=b"x", headers={"content-type": "image/png"})), resolve=PUBLIC)
+
+
+# --- --allow-local: loopback だけを明示的に許可する -------------------------------------------
+
+def res(ip):
+    return lambda host, port, type=None: [(2, 1, 6, "", (ip, port))]
+
+
+def test_loopback_rejected_by_default_with_hint():
+    with pytest.raises(T.TargetError, match="--allow-local"):
+        T.check_url_safe("http://127.0.0.1:8852/", res("127.0.0.1"))
+
+
+@pytest.mark.parametrize("ip", ["127.0.0.1", "127.1.2.3", "::1"])
+def test_allow_local_permits_loopback(ip):
+    T.check_url_safe("http://localhost:8852/", res(ip), allow_local=True)
+
+
+@pytest.mark.parametrize("ip", ["10.0.0.5", "192.168.1.1", "172.16.0.1", "169.254.169.254", "0.0.0.0"])
+def test_allow_local_still_rejects_other_internal(ip):
+    with pytest.raises(T.TargetError, match="loopback のみ"):
+        T.check_url_safe("http://internal.example/", res(ip), allow_local=True)
+
+
+def test_allow_local_load_url_and_redirect_to_private_blocked():
+    html = "<html><body><p>local app</p></body></html>"
+    t = T.load_url("http://127.0.0.1:8852/", resolve=res("127.0.0.1"), allow_local=True,
+                   client=client(lambda r: httpx.Response(200, text=html, headers={"content-type": "text/html"})))
+    assert "local app" in t.content
+
+    def resolve(host, port, type=None):
+        return [(2, 1, 6, "", ("192.168.0.9" if host == "lan.internal" else "127.0.0.1", port))]
+    h = lambda r: httpx.Response(302, headers={"location": "http://lan.internal/x"})  # noqa: E731
+    with pytest.raises(T.TargetError, match="内部"):
+        T.load_url("http://127.0.0.1:8852/", client=client(h), resolve=resolve, allow_local=True)
+
+
+def test_load_url_default_still_rejects_loopback():
+    with pytest.raises(T.TargetError, match="内部"):
+        T.load_url("http://127.0.0.1:8852/", client=client(lambda r: httpx.Response(200, text="x")),
+                   resolve=res("127.0.0.1"))
+
+
+def test_render_and_routes_argument_rules(tmp_path):
+    f = tmp_path / "a.md"
+    f.write_text("x", encoding="utf-8")
+    with pytest.raises(T.TargetError, match="URL にだけ"):
+        T.load_target(str(f), render=True)
+    with pytest.raises(T.TargetError, match="--render と一緒"):
+        T.load_target("https://example.com/", routes=["#a"])
