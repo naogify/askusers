@@ -87,6 +87,10 @@ class PersonaDesign(_Base):
 
 class User(_Base):
     id: str
+    displayName: str | None = Field(
+        default=None,
+        description="架空の氏名（表示用）。参照には使わず id を使う。古い data.json では未設定",
+    )
     attributes: dict[str, AttrValue]
     background: str
     goals: list[str] = []

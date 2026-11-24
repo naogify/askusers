@@ -376,11 +376,11 @@ def test_csv_compare_rows_and_user_id_pairing(sample_compare):
     head, rows = build_rows(sample_compare)
     n = len(sample_compare.users)
     assert len(rows) == 2 * n  # 1 行 = 1 ユーザー × 1 評価対象
-    assert head[:3] == ["user_id", "target_id", "variant"]
-    ids = [(r[0], r[1]) for r in rows]
+    assert head[:4] == ["user_id", "display_name", "target_id", "variant"]
+    ids = [(r[0], r[2]) for r in rows]
     assert len(set(ids)) == 2 * n
     for u in sample_compare.users:
-        assert {r[2] for r in rows if r[0] == u.id} == {"before", "after"}
+        assert {r[3] for r in rows if r[0] == u.id} == {"before", "after"}
     # 提示前の回答は両行で共通
     q1col = head.index(f"Q1.{sample_compare.survey.questions[0].text}")
     for u in sample_compare.users:

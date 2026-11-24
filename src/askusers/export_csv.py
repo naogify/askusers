@@ -28,7 +28,8 @@ def build_rows(d: SurveyData) -> tuple[list[str], list[list]]:
     qs = d.survey.questions
     attr_keys = [a.key for a in d.personaDesign.attributeSchema]
     compare = d.mode == "compare"
-    header = ["user_id"] + (["target_id", "variant"] if compare else []) + ["status"] + attr_keys
+    header = ["user_id", "display_name"] + (["target_id", "variant"] if compare else [])
+    header += ["status"] + attr_keys
     header += ["background", "goals", "constraints", "current_solutions", "values",
                "failed_questions", "unanswered_questions"]
     theme_label = {t.id: t.label for t in d.analysis.themes}
@@ -45,7 +46,7 @@ def build_rows(d: SurveyData) -> tuple[list[str], list[list]]:
     targets = d.targets if compare else d.targets[:1]
     for u in d.users:
         for t in targets:
-            row: list = [u.id]
+            row: list = [u.id, u.displayName or ""]
             if compare:
                 row += [t.id, t.role or ""]
             mine = [rmap.get((u.id, None if q.phase == "before_exposure" else t.id, q.id)) for q in qs]

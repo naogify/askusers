@@ -35,6 +35,24 @@ _SSR_ANSWERS = [
 ]
 
 
+_SURNAMES = ["青木", "石井", "上田", "遠藤", "小川", "加藤", "木村", "久保", "近藤", "斎藤", "島田", "杉山",
+             "関口", "高木", "千葉", "辻本", "中島", "西村", "野口", "長谷川", "平井", "藤田", "堀", "松井",
+             "三浦", "村上", "森田", "矢野", "山口", "吉田", "和田", "渡辺", "佐藤", "鈴木"]
+_GIVEN = ["美咲", "健太", "陽子", "大輔", "さくら", "翔", "直美", "拓海", "恵子", "悠真", "彩", "誠",
+          "由美", "蓮", "麻衣", "亮", "千尋", "隆", "葵", "裕子", "優斗", "真由", "浩二", "莉子", "徹",
+          "明美", "駿", "里奈", "孝", "菜々子", "剛", "友香", "慎吾", "ひなた", "和也"]
+
+
+def _mock_name(i: int, used: set[str] = frozenset()) -> str:
+    """決定的に氏名を作る（姓・名の周期をずらして組み合わせが重ならないようにする）。"""
+    for k in range(len(_SURNAMES) * len(_GIVEN)):
+        n = i + k
+        name = f"{_SURNAMES[(n * 7) % len(_SURNAMES)]} {_GIVEN[(n * 11) % len(_GIVEN)]}"
+        if name not in used:
+            return name
+    return f"架空 {i}"
+
+
 def _h(s: str) -> int:
     return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
 
@@ -102,12 +120,22 @@ class MockRawLLM:
         users = []
         for s in slots:
             users.append({
+                "name": _mock_name(s),
                 "attributes": {"occupation": occ[_h(f"o{s}") % len(occ)], "experienceYears": 1 + _h(f"e{s}") % 25,
                                "orgSize": size[_h(f"s{s}") % len(size)], "currentTool": tool[_h(f"t{s}") % len(tool)]},
                 "background": f"モック人物{s}。{occ[_h(f'o{s}') % len(occ)]}として{1 + _h(f'e{s}') % 25}年働く。背景番号{_h(f'b{s}')}。",
                 "goals": [f"目標{s}"], "constraints": ["予算に限りがある"],
                 "currentSolutions": [tool[_h(f"t{s}") % len(tool)]], "values": ["堅実さ"]})
         return {"users": users}
+
+    def _names(self, user: str) -> dict:
+        used = set(re.findall(r"^- (.+)$", user.split("Names already used:")[-1], re.M))
+        out = []
+        for m in re.finditer(r"^- id: (user-\d+)", user, re.M):
+            name = _mock_name(_h(m.group(1)) % 997, used)
+            used.add(name)
+            out.append({"id": m.group(1), "name": name})
+        return {"names": out}
 
     def _answer(self, user: str) -> dict:
         uid = re.search(r"Respondent (user-\d+)", user)

@@ -9,6 +9,7 @@ import re
 from . import prompts as P
 from .llm import LLM, LLMError
 from .models import AttributeDef, PersonaDesign, User
+from .names import clean_name, find_name_problems
 
 BATCH = 10
 
@@ -94,7 +95,8 @@ async def _batch(llm: LLM, audience: str, objective: str, design: PersonaDesign,
 
 
 def _summ(u: User) -> str:
-    return "- " + ", ".join(f"{k}={v}" for k, v in u.attributes.items()) + f" | {u.background[:60]}"
+    name = f"{u.displayName}: " if u.displayName else ""
+    return "- " + name + ", ".join(f"{k}={v}" for k, v in u.attributes.items()) + f" | {u.background[:60]}"
 
 
 async def generate_personas(
@@ -125,7 +127,7 @@ async def generate_personas(
         try:
             extra = await _batch(llm, audience, objective, design, list(range(len(dups))),
                                  [_summ(u) for u in keep])
-            keep_raw = [u.model_dump() for u in keep]
+            keep_raw = [{**u.model_dump(), "name": u.displayName} for u in keep]
             users = _build(design, [{k: v for k, v in r.items() if k != "id"} for r in keep_raw] + extra,
                            warnings)
         except LLMError as e:
@@ -135,7 +137,43 @@ async def generate_personas(
             warnings.append(f"類似ペルソナが {len(remaining)} 件残っています: {', '.join(remaining)}")
     if not users:
         raise PersonaError("ペルソナを1人も生成できませんでした")
-    return users[:count]
+    users = users[:count]
+    await ensure_names(llm, design, audience, users, warnings)
+    return users
+
+
+async def ensure_names(llm: LLM, design: PersonaDesign, audience: str, users: list[User],
+                       warnings: list[str], rounds: int = 2) -> None:
+    """氏名の欠落・重複・名字の偏りを検査し、該当者だけ氏名を付け直す。直らなければ氏名なし（ID 表示）。"""
+    for _ in range(rounds):
+        redo = find_name_problems(users)
+        if not redo:
+            return
+        targets = [u for u in users if u.id in set(redo)]
+        kept = [u for u in users if u.id not in set(redo) and u.displayName]
+        used = "\n".join(f"- {u.displayName}" for u in kept) or "(none)"
+        for u in targets:
+            u.displayName = None
+        cards = "\n".join(f"- id: {u.id} | {_summ(u)[2:]}" for u in targets)
+        prompt = f"Audience: {audience}\n\nRespondents needing a name:\n{cards}\n\nNames already used:\n{used}"
+        try:
+            data, _ = await llm.structured(system=P.SYSTEM["names"], user=prompt,
+                                           schema=P.NAMES_SCHEMA, temperature=1.0)
+        except LLMError as e:
+            if e.kind == "budget":
+                raise
+            warnings.append(f"氏名の付け直しに失敗: {e}")
+            break
+        by_id = {u.id: u for u in targets}
+        for r in data["names"]:
+            if r.get("id") in by_id:
+                by_id[r["id"]].displayName = clean_name(r.get("name"))
+    # 付け直しても残った問題: 重複は氏名なしにして ID 表示へ戻す（同名の別人に見えるより安全）
+    for uid in find_name_problems(users, check_surname=False):
+        next(x for x in users if x.id == uid).displayName = None
+        warnings.append(f"{uid}: 氏名を付与できませんでした（欠落・重複）。ID 表示になります")
+    if skew := find_name_problems(users):
+        warnings.append(f"名字が偏っています（{len(skew)} 人）: {', '.join(skew)}")
 
 
 def _build(design: PersonaDesign, raw: list[dict], warnings: list[str]) -> list[User]:
@@ -146,7 +184,7 @@ def _build(design: PersonaDesign, raw: list[dict], warnings: list[str]) -> list[
         if missing:
             warnings.append(f"{uid}: 属性が欠落/不正のため空にしました: {', '.join(missing)}")
         users.append(User(
-            id=uid, attributes=attrs, background=r["background"].strip(),
+            id=uid, displayName=clean_name(r.get("name")), attributes=attrs, background=r["background"].strip(),
             goals=r.get("goals", []), constraints=r.get("constraints", []),
             currentSolutions=r.get("currentSolutions", []), values=r.get("values", []),
         ))

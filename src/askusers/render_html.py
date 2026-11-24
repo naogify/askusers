@@ -11,6 +11,7 @@ from html import escape as _esc
 from statistics import median
 
 from .models import Question, Response, SurveyData, User
+from .names import FICTIONAL_NOTICE, short_profile
 
 STATUS_JA = {"completed": "回答済み", "unanswered": "未回答", "failed": "回答取得失敗"}
 VALENCE_JA = {"positive": "肯定", "negative": "課題", "neutral": "中立", "request": "要望"}
@@ -81,13 +82,32 @@ def themes_chips(c: Ctx, r: Response) -> str:
     return " ".join(f'<span class="chip">{e(c.themes[t].label)}</span>' for t in r.themeIds)
 
 
+def uname(u: User) -> str:
+    """表示名。氏名が無い（古い data.json）ときは ID。"""
+    return u.displayName or u.id
+
+
+def ulabel(u: User) -> str:
+    return f"{u.displayName}（{u.id}）" if u.displayName else u.id
+
+
+def has_names(d: SurveyData) -> bool:
+    return any(u.displayName for u in d.users)
+
+
+def notice(d: SurveyData) -> str:
+    return f'<p class="note">{e(FICTIONAL_NOTICE)}</p>' if has_names(d) else ""
+
+
 def answer_item(c: Ctx, r: Response, show_target: bool) -> str:
     u = c.u[r.userId]
     score = f' <span class="score">SSR {r.ssr.expectedScore:.2f}</span>' if r.ssr else ""
     tgt = f' <span class="tag">{e(tlabel(c, r.targetId))}</span>' if show_target and r.targetId else ""
+    idtag = f' <span class="muted">{e(u.id)}</span>' if u.displayName else ""
     return (f'<li class="ans" data-themes="{e(" ".join(r.themeIds))}" data-status="{e(r.status)}">'
-            f'<a class="uid" href="#resp-{e(u.id)}" data-goto="{e(u.id)}">{e(u.id)}</a>{tgt}'
-            f'{score} <span class="muted">{e(r.id)}</span>{answer_html(r)}{themes_chips(c, r)}</li>')
+            f'<a class="uid" href="#resp-{e(u.id)}" data-goto="{e(u.id)}">{e(uname(u))}</a>{tgt}'
+            f'{score}{idtag}'
+            f' <span class="muted">{e(r.id)}</span>{answer_html(r)}{themes_chips(c, r)}</li>')
 
 
 def question_card(c: Ctx, q: Question) -> str:
@@ -168,7 +188,8 @@ def summary_tab(c: Ctx) -> str:
             f'<dt>対象ユーザー</dt><dd>{e(d.research.audience)}'
             f'{" <span class=tag>AIによる推定</span>" if d.research.audienceInferred else ""}</dd>'
             f'<dt>回答者数</dt><dd>{d.research.completedUserCount} / {d.research.requestedUserCount} 人（合成ユーザー）'
-            f'{f"、回答取得失敗 {nfail} 件" if nfail else ""}</dd>'
+            f'{f"、回答取得失敗 {nfail} 件" if nfail else ""}'
+            f'{" ／ " + e(FICTIONAL_NOTICE) if has_names(d) else ""}</dd>'
             f'<dt>質問数</dt><dd>{len(d.survey.questions)} 問</dd>'
             f'<dt>生成</dt><dd class="muted">{e(d.execution.models.get("generation", ""))} '
             f'({e(d.execution.models.get("generationBackend", ""))})'
@@ -206,11 +227,14 @@ def user_row(c: Ctx, u: User) -> str:
     lists = "".join(f"<p><b>{t}</b>：{e('、'.join(items))}</p>" for t, items in
                     (("目的・課題", u.goals), ("制約", u.constraints), ("現在の手段", u.currentSolutions),
                      ("価値観", u.values)) if items)
-    hay = " ".join([u.id, u.background, *map(str, u.attributes.values()), *u.goals, *u.constraints,
+    hay = " ".join([u.id, u.displayName or "", u.background, *map(str, u.attributes.values()), *u.goals, *u.constraints,
                     *u.currentSolutions, *u.values]).lower()
     key = " / ".join(str(u.attributes.get(a.key, "")) for a in d.personaDesign.attributeSchema[:3])
+    if u.displayName:
+        prof = short_profile(u, d.personaDesign.attributeSchema)
+        key = f"{u.id}" + (f" ・ {prof}" if prof else "")
     return (f'<article class="card user" data-search="{e(hay)}"><h4><a href="#resp-{e(u.id)}" data-goto="{e(u.id)}">'
-            f'{e(u.id)}</a> <span class="muted">{e(key)}</span></h4>'
+            f'{e(uname(u))}</a> <span class="muted">{e(key)}</span></h4>'
             f'<details><summary>属性・背景</summary><table class="attrs">{attrs}</table>'
             f'<p>{e(u.background)}</p>{lists}</details></article>')
 
@@ -219,10 +243,10 @@ def users_tab(c: Ctx) -> str:
     d = c.d
     pol = (f'<section class="card"><h3>調査対象者の設計</h3><p>{e(d.personaDesign.policy)}</p>'
            f'<p class="muted">生成したユーザーは実在する人物ではなく、統計的な代表性は保証されません。'
-           f'属性分布は実際の市場の分布ではありません。</p></section>')
+           f'属性分布は実際の市場の分布ではありません。</p>{notice(d)}</section>')
     return (pol + "<h3>属性の分布</h3>" + user_attr_distributions(c) +
             f'<h3>ユーザー一覧（{len(d.users)}人）</h3>'
-            '<p><input type="search" id="user-search" placeholder="ユーザーID・属性・背景で絞り込み" '
+            '<p><input type="search" id="user-search" placeholder="氏名・ユーザーID・属性・背景で絞り込み" '
             'aria-label="ユーザーを絞り込み"> <span id="user-count" class="muted"></span></p>'
             f'<div id="user-list">{"".join(user_row(c, u) for u in d.users)}</div>')
 
@@ -246,20 +270,21 @@ def response_section(c: Ctx, u: User) -> str:
                       f'<div class="cols {"two" if len(parts) > 1 else ""}">{"".join(parts)}</div></div>')
     attrs = "".join(f'<tr><th>{e(a.label)}</th><td>{e(u.attributes.get(a.key, ""))}</td></tr>'
                     for a in d.personaDesign.attributeSchema)
+    idtag = f' <span class="muted">{e(u.id)}</span>' if u.displayName else ""
     return (f'<section class="card resp-user" id="resp-{e(u.id)}" data-uid="{e(u.id)}">'
-            f'<h3>{e(u.id)}</h3><details open><summary>ペルソナ</summary><table class="attrs">{attrs}</table>'
+            f'<h3>{e(uname(u))}{idtag}</h3><details open><summary>ペルソナ</summary><table class="attrs">{attrs}</table>'
             f'<p>{e(u.background)}</p></details>{"".join(blocks)}</section>')
 
 
 def responses_tab(c: Ctx) -> str:
     d = c.d
-    opts = "".join(f'<option value="{e(u.id)}">{e(u.id)}</option>' for u in d.users)
+    opts = "".join(f'<option value="{e(u.id)}">{e(ulabel(u))}</option>' for u in d.users)
     nav = ('<div class="nav"><button type="button" id="prev-user">← 前</button> '
            f'<select id="user-select" aria-label="ユーザーを選択">{opts}</select> '
            '<button type="button" id="next-user">次 →</button> '
-           '<input type="search" id="resp-search" placeholder="ユーザーIDで検索（例: user-007）" '
-           'aria-label="ユーザーIDで検索"> <span id="resp-msg" class="muted"></span></div>')
-    return nav + "".join(response_section(c, u) for u in d.users)
+           '<input type="search" id="resp-search" placeholder="氏名・ユーザーIDで検索（例: user-007）" '
+           'aria-label="氏名・ユーザーIDで検索"> <span id="resp-msg" class="muted"></span></div>')
+    return notice(d) + nav + "".join(response_section(c, u) for u in d.users)
 
 
 CSS = """
@@ -305,7 +330,7 @@ function show(name){tabs.forEach(function(t){t.setAttribute('aria-selected',Stri
 tabs.forEach(function(t){t.addEventListener('click',function(){show(t.dataset.tab)})});
 document.documentElement.classList.add('js');
 var users=[].slice.call(document.querySelectorAll('.resp-user')),ids=users.map(function(s){return s.dataset.uid});
-var sel=document.getElementById('user-select'),msg=document.getElementById('resp-msg'),cur=0;
+var sel=document.getElementById('user-select'),labels=sel?[].slice.call(sel.options).map(function(o){return o.textContent.toLowerCase()}):[],msg=document.getElementById('resp-msg'),cur=0;
 function showUser(i){if(i<0||i>=ids.length)return;cur=i;users.forEach(function(s,j){s.hidden=j!==i});if(sel)sel.value=ids[i];}
 function goto(uid){var i=ids.indexOf(uid);if(i>=0){show('responses');showUser(i);window.scrollTo(0,0);}}
 document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('[data-goto]');
@@ -315,8 +340,8 @@ if(sel){sel.addEventListener('change',function(){showUser(ids.indexOf(sel.value)
  document.getElementById('next-user').addEventListener('click',function(){showUser(cur+1)});
  document.getElementById('resp-search').addEventListener('input',function(ev){var v=ev.target.value.trim().toLowerCase();
   if(!v){msg.textContent='';return;}var i=ids.findIndex(function(x){return x.toLowerCase()===v})
-  if(i<0)i=ids.findIndex(function(x){return x.toLowerCase().indexOf(v)>=0});
-  if(i>=0){showUser(i);msg.textContent='';}else{msg.textContent='該当するユーザーIDがありません';}});}
+  if(i<0)i=labels.findIndex(function(x){return x.indexOf(v)>=0});
+  if(i>=0){showUser(i);msg.textContent='';}else{msg.textContent='該当するユーザーがいません';}});}
 var us=document.getElementById('user-search'),cards=[].slice.call(document.querySelectorAll('#user-list .user')),uc=document.getElementById('user-count');
 if(us){us.addEventListener('input',function(){var v=us.value.trim().toLowerCase(),n=0;cards.forEach(function(c){
   var ok=!v||c.dataset.search.indexOf(v)>=0;c.hidden=!ok;if(ok)n++});uc.textContent=v?n+'人が該当':'';});}

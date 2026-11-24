@@ -1328,6 +1328,19 @@
           "title": "Id",
           "type": "string"
         },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "架空の氏名（表示用）。参照には使わず id を使う。古い data.json では未設定",
+          "title": "Displayname"
+        },
         "attributes": {
           "additionalProperties": {
             "anyOf": [
