@@ -110,3 +110,10 @@ def test_theme_verdicts():
 def test_compare_limitation_is_stated(cmp_run):
     d, _ = cmp_run
     assert any("実際の顧客における改善効果を保証しません" in x for x in d.limitations)
+
+
+def test_markdown_has_no_empty_table_without_ssr(tmp_path, two_docs):
+    from askusers.render_md import render_markdown
+    d = run_pipeline(tmp_path, list(two_docs), mode="compare", embedder=None, no_ssr=True, count=4)
+    md = render_markdown(d)
+    assert "| 指標 |" not in md and "## 2. 発見事項" in md and d.analysis.comparison.themes

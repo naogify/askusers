@@ -76,16 +76,16 @@ def render_markdown(d: SurveyData) -> str:
         out.append("")
     if d.mode == "compare" and a.comparison:
         c = a.comparison
-        out += ["| 指標 | Before | After | 差分 | 有効回答 B/A | 対応のある差分 (n) |", "|---|---|---|---|---|---|"]
+        rows = []
         for qc in c.questions:
             if qc.meanBefore is None or qc.meanAfter is None:
                 continue
             pd = f"{qc.pairedMeanDelta:+.2f} ({qc.pairedN})" if qc.pairedMeanDelta is not None else "-"
-            out.append(f"| {_one_line(qmap[qc.questionId].text)}（{qc.questionId.upper()}） | {qc.meanBefore:.2f} | "
-                       f"{qc.meanAfter:.2f} | {qc.meanDelta:+.2f} | {qc.validBefore}/{qc.validAfter} | {pd} |")
-        out.append("")
-        out.append("平均スコアは各対象の有効回答すべての平均。「対応のある差分」は両対象に有効回答がある同一ユーザーだけの差分の平均。")
-        out.append("")
+            rows.append(f"| {_one_line(qmap[qc.questionId].text)}（{qc.questionId.upper()}） | {qc.meanBefore:.2f} | "
+                        f"{qc.meanAfter:.2f} | {qc.meanDelta:+.2f} | {qc.validBefore}/{qc.validAfter} | {pd} |")
+        if rows:  # SSR 対象の質問が無い（--no-ssr 等）ときは空の表を出さない
+            out += ["| 指標 | Before | After | 差分 | 有効回答 B/A | 対応のある差分 (n) |", "|---|---|---|---|---|---|"]
+            out += rows + ["", "平均スコアは各対象の有効回答すべての平均。「対応のある差分」は両対象に有効回答がある同一ユーザーだけの差分の平均。", ""]
         for title, items in (("改善された点", c.improved), ("改善されなかった点", c.notImproved),
                              ("新たに発生した課題", c.newIssues)):
             if items:
